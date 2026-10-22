@@ -198,193 +198,13 @@ cena.add(chao);
 
 
 // ==================================================
-// 8. CRIAR ÁRVORES
-// ==================================================
-
-function criarArvore(x, z) {
-
-    // Tronco
-
-    const geometriaTronco = new THREE.CylinderGeometry(
-
-        0.2,
-
-        0.3,
-
-        1.5,
-
-        8
-
-    );
-
-    const materialTronco = new THREE.MeshStandardMaterial({
-
-        color: 0x795548
-
-    });
-
-    const tronco = new THREE.Mesh(
-
-        geometriaTronco,
-
-        materialTronco
-
-    );
-
-    tronco.position.set(
-
-        x,
-
-        0.75,
-
-        z
-
-    );
-
-    tronco.castShadow = true;
-
-    tronco.receiveShadow = true;
-
-    cena.add(tronco);
-
-
-    // Copa da árvore
-
-    const geometriaCopa = new THREE.ConeGeometry(
-
-        1.2,
-
-        2.5,
-
-        8
-
-    );
-
-    const materialCopa = new THREE.MeshStandardMaterial({
-
-        color: 0x2e7d32
-
-    });
-
-    const copa = new THREE.Mesh(
-
-        geometriaCopa,
-
-        materialCopa
-
-    );
-
-    copa.position.set(
-
-        x,
-
-        2.5,
-
-        z
-
-    );
-
-    copa.castShadow = true;
-
-    cena.add(copa);
-
-}
-
-
-// Criar árvores nas bordas do cenário
-
-for (let i = -40; i <= 40; i += 10) {
-
-    criarArvore(i, -35);
-
-    criarArvore(i, 35);
-
-    criarArvore(-35, i);
-
-    criarArvore(35, i);
-
-}
-
-
-// ==================================================
-// 9. CRIAR PEDRAS DECORATIVAS
-// ==================================================
-
-function criarPedra(x, z) {
-
-    const geometria = new THREE.DodecahedronGeometry(
-
-        0.5,
-
-        0
-
-    );
-
-    const material = new THREE.MeshStandardMaterial({
-
-        color: 0x808080,
-
-        roughness: 1
-
-    });
-
-    const pedra = new THREE.Mesh(
-
-        geometria,
-
-        material
-
-    );
-
-    pedra.position.set(
-
-        x,
-
-        0.3,
-
-        z
-
-    );
-
-    pedra.rotation.set(
-
-        Math.random(),
-
-        Math.random(),
-
-        Math.random()
-
-    );
-
-    pedra.castShadow = true;
-
-    pedra.receiveShadow = true;
-
-    cena.add(pedra);
-
-}
-
-
-// Distribuir pedras pelo campo
-
-for (let i = 0; i < 25; i++) {
-
-    const x = Math.random() * 50 - 25;
-
-    const z = Math.random() * 50 - 25;
-
-    criarPedra(x, z);
-
-}
-
-
-// ==================================================
 // 10. CRIAR O PERSONAGEM
 // ==================================================
 
 // Grupo que controla a posição e a direção do personagem
 
 const personagem = new THREE.Group();
+
 
 cena.add(personagem);
 
@@ -414,6 +234,7 @@ dracoLoader.setDecoderPath(
 const carregador = new GLTFLoader();
 
 carregador.setDRACOLoader(dracoLoader);
+
 
 
 // Importar o arquivo GLB
@@ -577,6 +398,201 @@ carregador.load(
 
 );
 
+// ==================================================
+// FUNÇÃO PARA CARREGAR MODELOS GLB
+// ==================================================
+
+function carregarModelo(
+    arquivo,
+    grupo,
+    x,
+    y,
+    z,
+    escala
+) {
+
+    // Carregar o arquivo GLB
+    carregador.load(
+
+        arquivo,
+
+        // Quando o modelo terminar de carregar
+        function (gltf) {
+
+            const modelo = gltf.scene;
+
+            // Definir a posição
+            modelo.position.set(x, y, z);
+
+            // Definir a escala
+            modelo.scale.setScalar(escala);
+
+            // Configurar sombras
+            modelo.traverse(function (objeto) {
+
+                if (objeto.isMesh) {
+
+                    objeto.castShadow = true;
+
+                    objeto.receiveShadow = true;
+
+                }
+
+            });
+
+            // Adicionar o modelo ao grupo escolhido
+            grupo.add(modelo);
+
+            console.log(
+                'Modelo carregado:',
+                arquivo
+            );
+
+        },
+
+        // Acompanhar o progresso do carregamento
+        function (progresso) {
+
+            if (progresso.total > 0) {
+
+                const porcentagem = Math.round(
+                    progresso.loaded /
+                    progresso.total * 100
+                );
+
+                console.log(
+                    `Carregando ${arquivo}: ${porcentagem}%`
+                );
+
+            }
+
+        },
+
+        // Tratar erros
+        function (erro) {
+
+            console.error(
+                'Erro ao carregar:',
+                arquivo,
+                erro
+            );
+
+        }
+
+    );
+
+}
+
+function carregarCenario(arquivo,grupo, x, y, z, escala) {
+// Importar o arquivo GLB
+
+carregador.load(
+
+    arquivo,
+    
+
+    function (gltf) {
+
+        const modelo = gltf.scene;
+
+        // Ajustar a posição do modelo
+        modelo.position.set(x, y, z);
+
+        // Ajustar a escala 
+        modelo.scale.setScalar(escala);
+
+
+        // Configurar sombras
+
+        modelo.traverse(function (objeto) {
+
+            if (objeto.isMesh) {
+
+                objeto.castShadow = true;
+
+                objeto.receiveShadow = true;
+
+            }
+
+        });
+
+
+        // Adicionar o modelo ao personagem
+
+        grupo.add(modelo);
+
+        console.log('Cenário carregado com sucesso!', arquivo);
+
+    },
+
+    function (progresso) {
+
+        if (progresso.total > 0) {
+
+            const porcentagem = Math.round(
+
+                progresso.loaded / progresso.total * 100
+
+            );
+
+            mensagem.textContent =
+
+                `Carregando cenário: ${porcentagem}%`;
+
+        }
+
+    },
+
+    undefined,
+
+    function (erro) {
+
+        console.error(
+
+            'Erro ao carregar o cenário:',
+
+            erro
+
+        );
+
+        mensagem.textContent = 'Não foi possível carregar o cenário. ';
+
+        status.textContent = 'Erro ao carregar o modelo';
+
+    }
+
+);
+}
+
+// Grupo que organizará o cenário
+const grupoCenario = new THREE.Group();
+
+// Adicionar o grupo à cena
+cena.add(grupoCenario);
+
+// Carregar o cenário
+carregarModelo(
+    './assets/arbusto.glb',
+    grupoCenario,
+    0, 0, 0,
+    1
+);
+
+// Carregar o cenário
+carregarModelo(
+    './assets/arbusto.glb',
+    grupoCenario,
+    1, 0, 5,
+    1
+);
+
+// Carregar o cenário
+carregarModelo(
+    './assets/casa.glb',
+    grupoCenario,
+    20, 0, 0,
+    10
+);
 
 // ==================================================
 // 11. CONTROLES DO TECLADO
@@ -643,6 +659,8 @@ window.addEventListener('blur', function () {
 });
 
 
+
+
 // ==================================================
 // 12. CONFIGURAR A MOVIMENTAÇÃO
 // ==================================================
@@ -679,6 +697,7 @@ const relogio = new THREE.Clock();
 // ==================================================
 
 function animar() {
+
 
     requestAnimationFrame(animar);
 
@@ -830,35 +849,53 @@ function animar() {
 
 
         // ==================================================
-        // CÂMERA QUE ACOMPANHA O PERSONAGEM
+        // CÂMERA ATRÁS DO PERSONAGEM
         // ==================================================
 
-        // Definir onde a câmera deve ficar
+        // Distância da câmera até o personagem
+        const distanciaCamera = 9;
 
-        const posicaoDesejada = new THREE.Vector3(
+        // Altura da câmera
+        const alturaCamera = 6;
 
-            personagem.position.x,
+        // Calcular a posição desejada da câmera
 
-            personagem.position.y + 6,
+        const deslocamentoCamera = new THREE.Vector3(
 
-            personagem.position.z + 9
+            0,
+
+            alturaCamera,
+
+            -distanciaCamera
 
         );
 
+        // Girar o deslocamento conforme a direção do personagem
+        deslocamentoCamera.applyQuaternion(
+            personagem.quaternion
+        );
+
+        // Calcular a posição desejada
+        const posicaoDesejada = new THREE.Vector3(
+
+            personagem.position.x + deslocamentoCamera.x,
+
+            personagem.position.y + deslocamentoCamera.y,
+
+            personagem.position.z + deslocamentoCamera.z
+
+        );
 
         // Movimento suave da câmera
-
         camera.position.lerp(
 
             posicaoDesejada,
 
-            1 - Math.exp(-4 * delta)
+            1 - Math.exp(-1 * delta)
 
         );
 
-
         // Definir o ponto que a câmera observa
-
         alvoCamera.set(
 
             personagem.position.x,
@@ -869,7 +906,7 @@ function animar() {
 
         );
 
-
+        // Fazer a câmera olhar para o personagem
         camera.lookAt(alvoCamera);
 
     }
