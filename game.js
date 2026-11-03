@@ -483,86 +483,6 @@ function carregarModelo(
 
 }
 
-function carregarCenario(arquivo,grupo, x, y, z, escala) {
-// Importar o arquivo GLB
-
-carregador.load(
-
-    arquivo,
-    
-
-    function (gltf) {
-
-        const modelo = gltf.scene;
-
-        // Ajustar a posição do modelo
-        modelo.position.set(x, y, z);
-
-        // Ajustar a escala 
-        modelo.scale.setScalar(escala);
-
-
-        // Configurar sombras
-
-        modelo.traverse(function (objeto) {
-
-            if (objeto.isMesh) {
-
-                objeto.castShadow = true;
-
-                objeto.receiveShadow = true;
-
-            }
-
-        });
-
-
-        // Adicionar o modelo ao personagem
-
-        grupo.add(modelo);
-
-        console.log('Cenário carregado com sucesso!', arquivo);
-
-    },
-
-    function (progresso) {
-
-        if (progresso.total > 0) {
-
-            const porcentagem = Math.round(
-
-                progresso.loaded / progresso.total * 100
-
-            );
-
-            mensagem.textContent =
-
-                `Carregando cenário: ${porcentagem}%`;
-
-        }
-
-    },
-
-    undefined,
-
-    function (erro) {
-
-        console.error(
-
-            'Erro ao carregar o cenário:',
-
-            erro
-
-        );
-
-        mensagem.textContent = 'Não foi possível carregar o cenário. ';
-
-        status.textContent = 'Erro ao carregar o modelo';
-
-    }
-
-);
-}
 
 // Grupo que organizará o cenário
 const grupoCenario = new THREE.Group();
@@ -574,16 +494,16 @@ cena.add(grupoCenario);
 carregarModelo(
     './assets/arbusto.glb',
     grupoCenario,
-    0, 0, 0,
+    15, 0, 0,
     1
 );
 
 // Carregar o cenário
 carregarModelo(
-    './assets/arbusto.glb',
+    './assets/arvore.glb',
     grupoCenario,
     1, 0, 5,
-    1
+    10
 );
 
 // Carregar o cenário
@@ -593,6 +513,9 @@ carregarModelo(
     20, 0, 0,
     10
 );
+
+
+
 
 // ==================================================
 // 11. CONTROLES DO TECLADO
