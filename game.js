@@ -770,27 +770,21 @@ function animar() {
 
         );
 
-
         // ==================================================
-        // CÂMERA ATRÁS DO PERSONAGEM
+        // CÂMERA EM PRIMEIRA PESSOA
         // ==================================================
 
-        // Distância da câmera até o personagem
-        const distanciaCamera = 9;
+        // Altura da câmera em relação ao personagem
+        const alturaCamera = 1.6;
 
-        // Altura da câmera
-        const alturaCamera = 6;
+        // Pequeno deslocamento para posicionar a câmera no rosto
+        const deslocamentoFrontal = 0.1;
 
-        // Calcular a posição desejada da câmera
-
+        // Calcular a posição da câmera
         const deslocamentoCamera = new THREE.Vector3(
-
             0,
-
             alturaCamera,
-
-            -distanciaCamera
-
+            deslocamentoFrontal
         );
 
         // Girar o deslocamento conforme a direção do personagem
@@ -798,54 +792,49 @@ function animar() {
             personagem.quaternion
         );
 
-        // Calcular a posição desejada
+        // Definir a posição desejada da câmera
         const posicaoDesejada = new THREE.Vector3(
-
             personagem.position.x + deslocamentoCamera.x,
-
             personagem.position.y + deslocamentoCamera.y,
-
             personagem.position.z + deslocamentoCamera.z
-
         );
 
         // Movimento suave da câmera
         camera.position.lerp(
-
             posicaoDesejada,
-
-            1 - Math.exp(-1 * delta)
-
+            1 - Math.exp(-5 * delta)
         );
 
-        // Definir o ponto que a câmera observa
-        alvoCamera.set(
+        // Definir para onde a câmera deve olhar
+        const direcaoOlhar = new THREE.Vector3(0, 0, 1);
 
-            personagem.position.x,
-
-            personagem.position.y + 1,
-
-            personagem.position.z
-
+        // Girar a direção conforme a orientação do personagem
+        direcaoOlhar.applyQuaternion(
+            personagem.quaternion
         );
 
-        // Fazer a câmera olhar para o personagem
+        // Definir o ponto observado pela câmera
+        alvoCamera.copy(posicaoDesejada).add(
+            direcaoOlhar.multiplyScalar(10)
+        );
+
+        // Orientar a câmera
         camera.lookAt(alvoCamera);
 
+
+        // ==================================================
+        // DESENHAR A CENA
+        // ==================================================
+
+        renderer.render(
+
+            cena,
+
+            camera
+
+        );
+
     }
-
-
-    // ==================================================
-    // DESENHAR A CENA
-    // ==================================================
-
-    renderer.render(
-
-        cena,
-
-        camera
-
-    );
 
 }
 
