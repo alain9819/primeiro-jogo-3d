@@ -9,6 +9,17 @@ import { GLTFLoader } from
 
 import { DRACOLoader } from
     'three/addons/loaders/DRACOLoader.js';
+
+// ==================================================
+// CAIXA DE COLISÃO DO PERSONAGEM
+// ==================================================
+
+const caixaPersonagem = new THREE.Box3();
+
+// Dimensões aproximadas do personagem
+const larguraPersonagem = 0.6;
+const alturaPersonagem = 1.8;
+const profundidadePersonagem = 0.6;
     
 // ==================================================
 // 2. ELEMENTOS DA PÁGINA
@@ -20,6 +31,12 @@ const mensagem = document.getElementById('mensagem');
 
 const status = document.getElementById('status');
 
+// ==================================================
+// SISTEMA DE COLISÃO
+// ==================================================
+
+// Lista de objetos que terão colisão
+const objetosColisao = [];
 
 // ==================================================
 // 3. CRIAR A CENA 3D
@@ -196,6 +213,24 @@ chao.receiveShadow = true;
 
 cena.add(chao);
 
+// ==================================================
+// FÍSICA DO PERSONAGEM
+// ==================================================
+
+// Velocidade vertical do personagem
+let velocidadeVertical = 0;
+
+// Força da gravidade
+const gravidade = 20;
+
+// Força do pulo
+const forcaPulo = 8;
+
+// Altura do chão
+const alturaChao = 0;
+
+// Verificar se o personagem está no chão
+let noChao = true;
 
 // ==================================================
 // 10. CRIAR O PERSONAGEM
@@ -408,7 +443,8 @@ function carregarModelo(
     x,
     y,
     z,
-    escala
+    escala,
+    colidir = false
 ) {
 
     // Carregar o arquivo GLB
@@ -442,6 +478,22 @@ function carregarModelo(
 
             // Adicionar o modelo ao grupo escolhido
             grupo.add(modelo);
+
+            // ==================================================
+            // CRIAR COLISÃO DO MODELO
+            // ==================================================
+
+            if (colidir) {
+
+                // Criar uma caixa invisível ao redor do modelo
+                const caixa = new THREE.Box3();
+
+                caixa.setFromObject(modelo);
+
+                // Adicionar à lista de colisões
+                objetosColisao.push(caixa);
+
+            }
 
             console.log(
                 'Modelo carregado:',
@@ -495,7 +547,8 @@ carregarModelo(
     './assets/arbusto.glb',
     grupoCenario,
     15, 0, 0,
-    1
+    1,
+    true
 );
 
 // Carregar o cenário
@@ -503,7 +556,8 @@ carregarModelo(
     './assets/arvore.glb',
     grupoCenario,
     1, 0, 5,
-    10
+    10,
+    true
 );
 
 // Carregar o cenário
@@ -511,7 +565,8 @@ carregarModelo(
     './assets/casa.glb',
     grupoCenario,
     20, 0, 0,
-    10
+    10,
+    true
 );
 
 
@@ -549,8 +604,21 @@ window.addEventListener('keydown', function (evento) {
 
         evento.preventDefault();
 
-    }
+    } if (evento.code === 'Space') {
 
+        evento.preventDefault();
+
+        // Só permite pular quando estiver no chão
+        if (noChao) {
+
+            velocidadeVertical = forcaPulo;
+
+            noChao = false;
+
+        }
+
+    }
+  
 
     teclas[tecla] = true;
 
@@ -614,6 +682,47 @@ const alvoCamera = new THREE.Vector3();
 
 const relogio = new THREE.Clock();
 
+// ==================================================
+// VERIFICAR COLISÕES
+// ==================================================
+
+function verificarColisao(x, y, z) {
+
+    // Definir os limites da caixa do personagem
+    caixaPersonagem.min.set(
+
+        x - larguraPersonagem / 2,
+
+        y,
+
+        z - profundidadePersonagem / 2
+
+    );
+
+    caixaPersonagem.max.set(
+
+        x + larguraPersonagem / 2,
+
+        y + alturaPersonagem,
+
+        z + profundidadePersonagem / 2
+
+    );
+
+    // Verificar colisão com cada objeto
+    for (const caixa of objetosColisao) {
+
+        if (caixaPersonagem.intersectsBox(caixa)) {
+
+            return true;
+
+        }
+
+    }
+
+    return false;
+
+}
 
 // ==================================================
 // 15. FUNÇÃO PRINCIPAL DO JOGO
@@ -656,6 +765,35 @@ function animar() {
         direcao.set(0, 0, 0);
 
 
+        // ==================================================
+        // GRAVIDADE E MOVIMENTO VERTICAL
+        // ==================================================
+
+        // Aplicar gravidade enquanto estiver no ar
+        if (!noChao) {
+
+            velocidadeVertical -= gravidade * delta;
+
+        }
+
+        // Atualizar a posição vertical
+        personagem.position.y += velocidadeVertical * delta;
+
+        // ==================================================
+        // VERIFICAR CONTATO COM O CHÃO
+        // ==================================================
+
+        if (personagem.position.y <= alturaChao) {
+
+            personagem.position.y = alturaChao;
+
+            velocidadeVertical = 0;
+
+            noChao = true;
+
+        }
+
+
         // Movimentação horizontal
 
         if (
@@ -683,7 +821,7 @@ function animar() {
 
         }
 
-
+        
         // Movimentação lateral
 
         if (
@@ -714,28 +852,62 @@ function animar() {
 
         // Verificar se existe movimento
 
-        if (direcao.lengthSq() > 0) {
+        // ==================================================
+        // MOVIMENTO COM COLISÃO
+        // ==================================================
 
-            // Normalizar evita que a diagonal
-            // seja mais rápida que o movimento reto
+        if (direcao.lengthSq() > 0) {
 
             direcao.normalize();
 
+            // Calcular o deslocamento
+            const movimentoX = direcao.x * velocidade * delta;
 
-            // Movimentar o personagem
+            const movimentoZ = direcao.z * velocidade * delta;
 
-            personagem.position.x +=
+            // ==============================================
+            // TESTAR MOVIMENTO NO EIXO X
+            // ==============================================
 
-                direcao.x * velocidade * delta;
+            const novaPosicaoX =
+                personagem.position.x + movimentoX;
 
+            if (!verificarColisao(
 
-            personagem.position.z +=
+                novaPosicaoX,
 
-                direcao.z * velocidade * delta;
+                personagem.position.y,
 
+                personagem.position.z
 
-            // Girar o personagem na direção do movimento
+            )) {
 
+                personagem.position.x = novaPosicaoX;
+
+            }
+
+            // ==============================================
+            // TESTAR MOVIMENTO NO EIXO Z
+            // ==============================================
+
+            const novaPosicaoZ =
+                personagem.position.z + movimentoZ;
+
+            if (!verificarColisao(
+
+                personagem.position.x,
+
+                personagem.position.y,
+
+                novaPosicaoZ
+
+            )) {
+
+                personagem.position.z = novaPosicaoZ;
+
+            }
+
+            // Rotacionar o personagem conforme o movimento
             personagem.rotation.y = Math.atan2(
 
                 direcao.x,
@@ -745,6 +917,7 @@ function animar() {
             );
 
         }
+
 
 
         // Impedir que o personagem saia do campo
